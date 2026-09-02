@@ -28,6 +28,14 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- MicroProfile OpenAPI 3.1.1 - provided por WildFly -->
+        <dependency>
+            <groupId>org.eclipse.microprofile.openapi</groupId>
+            <artifactId>microprofile-openapi-api</artifactId>
+            <version>3.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Testes unitarios puros (sem container) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
