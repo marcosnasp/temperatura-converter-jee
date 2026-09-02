@@ -12,6 +12,6 @@ COPY --chown=jboss:jboss scripts/add-user.sh /opt/jboss/wildfly/scripts/add-user
 RUN chmod +x /opt/jboss/wildfly/scripts/add-user.sh
 USER jboss
 COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/temperatura.war
-# habilita metrics/health/telemetry se ainda nao estiverem (WildFly 31 ja traz)
+# habilita metrics/health/telemetry/openapi se ainda nao estiverem (WildFly 32 ja traz via standalone-microprofile.xml)
 EXPOSE 8080 9990
 ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"]

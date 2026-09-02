@@ -1,6 +1,6 @@
 # Arquitetura Detalhada — Sistema Completo
 
-> Visão 360° do projeto **temperatura-converter-jee** (WildFly 31) + stack de observabilidade.
+> Visão 360° do projeto **temperatura-converter-jee** (WildFly 32) + stack de observabilidade.
 > Este doc é o **índice mestre** — cada seção aprofunda em um doc filho.
 
 ---
@@ -24,7 +24,7 @@
 
 Microserviço **stateless, sem banco**, que converte temperatura entre **Celsius, Fahrenheit, Kelvin** via `GET /converter/{origem}to{destino}/{valor}` → `Double` JSON. Autenticado com Basic Auth, observado por métricas/traces/logs, exposto via HTTPS com domínios `*.lab.dev` atrás de Nginx.
 
-**Stack:** Java 21 + Jakarta EE 10 (WildFly 31, JAX-RS/CDI) + MicroProfile Metrics/Health/Telemetry (SmallRye) + OTel Collector → Prometheus → Grafana + Nginx TLS.
+**Stack:** Java 21 + Jakarta EE 10 (WildFly 32, JAX-RS/CDI) + MicroProfile Metrics/Health/Telemetry/OpenAPI (SmallRye) + OTel Collector → Prometheus → Grafana + Nginx TLS.
 
 **Requisito não funcional:** rodar com `docker compose up --build -d` e estar monitorado em <60s.
 
@@ -61,7 +61,7 @@ Microserviço **stateless, sem banco**, que converte temperatura entre **Celsius
 └──────────────────────┬──────────────────────────────────────┘
                        │ HTTP 8080/3000/9090/13133 (rede monitoring)
 ┌──────────────────────▼──────────────────────────────────────┐
-│  App — JEE WildFly 31 (temperatura-converter-jee:8080)     │
+│  App — JEE WildFly 32 (temperatura-converter-jee:8080)     │
 │  JAX-RS /converter/* (BasicAuthFilter) + /metrics + /health│
 │  CDI CalculadoraTemperaturaImpl (6 fórmulas puras)         │
 │  MP Metrics (histogram) + MP Health + MP Telemetry (OTLP)  │
@@ -94,7 +94,7 @@ Microserviço **stateless, sem banco**, que converte temperatura entre **Celsius
 
 | Componente | Imagem | Porta host | URL interna (rede) | URL externa (host) | Config principal |
 |------------|--------|------------|--------------------|--------------------|------------------|
-| **JEE** | `quay.io/wildfly/wildfly:31.0.0.Final-jdk21` | 8080, 9990 | `jee:8080` | `http://localhost:8080` / `https://jee.lab.dev` | `microprofile-config.properties`, `BasicAuthFilter.java:21`, `jboss-web.xml:3` |
+| **JEE** | `quay.io/wildfly/wildfly:32.0.1.Final-jdk21` | 8080, 9990 | `jee:8080` | `http://localhost:8080` / `https://jee.lab.dev` | `microprofile-config.properties`, `BasicAuthFilter.java:21`, `jboss-web.xml:3` |
 | **OTel Collector** | `otel/opentelemetry-collector-contrib:0.128.0` | 4317, 4318, 8889, 13133 | `otel-collector:4317` | `http://localhost:4318` | `otel-collector-config.yaml:1` |
 | **Prometheus** | `prom/prometheus:v3.3.1` | 9090 | `prometheus:9090` | `http://localhost:9090` / `https://prometheus.lab.dev` | `prometheus.yml:1` |
 | **Grafana** | `grafana/grafana:12.2.0` | 3000 | `grafana:3000` | `http://localhost:3000` / `https://grafana.lab.dev` | `datasource.yml:1`, `temperatura-dashboard.json:1` |
@@ -185,7 +185,7 @@ open https://grafana.lab.dev  # admin/admin → Temperatura Converter Service
 
 | Decisão | Alternativa descartada | Por quê |
 |---------|------------------------|---------|
-| **WildFly 31 + Jakarta EE 10** (sem Spring Boot) | Spring Boot 3.x + Actuator | Requisito JEE do projeto; WildFly já traz MP Metrics/Health/Telemetry sem `micrometer-registry-prometheus` |
+| **WildFly 32 + Jakarta EE 10** (sem Spring Boot) | Spring Boot 3.x + Actuator | Requisito JEE do projeto; WildFly 32 (`standalone-microprofile.xml`) já traz MP Metrics/Health/Telemetry/OpenAPI sem `micrometer-registry-prometheus` |
 | **MicroProfile Metrics** (`/metrics` texto Prometheus) | Micrometer + Spring Actuator | Nativo no WildFly, sem lib extra; formato idêntico para Prometheus |
 | **OTel Collector como sidecar** (push OTLP) | App expor `/metrics` só (pull) | Desacopla telemetria; mesmo pipeline para traces/metrics/logs; pronto para Tempo/Jaeger sem mudar app |
 | **Prometheus pull** | Pushgateway | Modelo padrão Prometheus; simples para lab (sem auth no `/metrics`) |
@@ -222,7 +222,7 @@ open https://grafana.lab.dev  # admin/admin → Temperatura Converter Service
 ```
 temperatura-converter-jee/
 ├── pom.xml                                         # java 21, jakartaee-api 10.0.0 (provided), war ROOT
-├── Dockerfile                                      # multi-stage Maven → WildFly 31
+├── Dockerfile                                      # multi-stage Maven → WildFly 32
 ├── scripts/add-user.sh                             # Elytron add-user.sh -a
 ├── src/main/
 │   ├── java/.../RestApplication.java               # @ApplicationPath("/")

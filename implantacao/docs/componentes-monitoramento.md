@@ -1,13 +1,13 @@
 # Componentes de Monitoramento — Deep Dive
 
-> Stack: **JEE WildFly 31 (MicroProfile Metrics/Health/Telemetry) + OTel Collector 0.128 + Prometheus 3.3.1 + Grafana 12.2 + Nginx 1.27** — 5 containers na rede `monitoring`.
+> Stack: **JEE WildFly 32 (MicroProfile Metrics/Health/Telemetry) + OTel Collector 0.128 + Prometheus 3.3.1 + Grafana 12.2 + Nginx 1.27** — 5 containers na rede `monitoring`.
 > Pré-requisito: ler `implantacao/README.md` (quick start) e `implantacao/docs/README.md` (guia geral).
 
 ---
 
 ## Índice
 1. [Mapa geral](#1-mapa-geral)
-2. [JEE / WildFly 31 — origem da telemetria](#2-jee--wildfly-31--origem-da-telemetria)
+2. [JEE / WildFly 32 — origem da telemetria](#2-jee--wildfly-32--origem-da-telemetria)
 3. [OTel Collector — roteador](#3-otel-collector--roteador)
 4. [Prometheus — banco de métricas](#4-prometheus--banco-de-métricas)
 5. [Grafana — visualização](#5-grafana--visualização)
@@ -58,11 +58,11 @@
 
 ---
 
-## 2. JEE / WildFly 31 — origem da telemetria
+## 2. JEE / WildFly 32 — origem da telemetria
 
 ### 2.1 O que é
 
-Imagem `quay.io/wildfly/wildfly:31.0.0.Final-jdk21`. Runtime Jakarta EE 10 que roda `ROOT.war` (gerado via `mvn package`). Sem Spring Boot.
+Imagem `quay.io/wildfly/wildfly:32.0.1.Final-jdk21`. Runtime Jakarta EE 10 que roda `ROOT.war` (gerado via `mvn package`). Sem Spring Boot.
 
 `Dockerfile:1`:
 ```dockerfile
@@ -70,11 +70,11 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .; RUN mvn dependency:go-offline -B
 COPY src ./src; RUN mvn package -DskipTests -B
-FROM quay.io/wildfly/wildfly:31.0.0.Final-jdk21
-COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
+FROM quay.io/wildfly/wildfly:32.0.1.Final-jdk21
+COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/temperatura.war
 COPY --chown=jboss:jboss scripts/add-user.sh /opt/jboss/wildfly/scripts/add-user.sh
 EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"]
+ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"] # standalone-microprofile.xml + statistics-enabled
 ```
 
 `scripts/add-user.sh:4`:
@@ -82,15 +82,16 @@ ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"]
 USER_NAME=${APP_USERNAME:-admin}
 USER_PASS=${APP_PASSWORD:-admin123}
 jboss@wildfly:~> /opt/jboss/wildfly/bin/add-user.sh -a -u "$USER_NAME" -p "$USER_PASS" -g guest
-exec /opt/jboss/wildfly/bin/standalone.sh -b 0.0.0.0 -bmanagement 0.0.0.0
+exec /opt/jboss/wildfly/bin/standalone.sh -c standalone-microprofile.xml -b 0.0.0.0 -bmanagement 0.0.0.0 # + -Dwildfly.statistics-enabled=true via JAVA_OPTS
 ```
 
 ### 2.2 Subsystems habilitados
 
-WildFly 31 já traz no `standalone.xml`:
-- `microprofile-metrics-smallrye` → expõe `/metrics`
+WildFly 32 já traz no `standalone-microprofile.xml`:
+- `microprofile-metrics-smallrye` → expõe `/metrics` (`:8080` e `:9990`)
 - `microprofile-health-smallrye` → expõe `/health` (e `:9990/health`)
 - `microprofile-telemetry-smallrye` (SmallRye OpenTelemetry) → intercepta JAX-RS e cria spans
+- `microprofile-openapi-smallrye` → expõe `/openapi` e `/openapi-ui` via `SwaggerUIResource`
 
 ### 2.3 Config — `src/main/resources/META-INF/microprofile-config.properties:1`
 
@@ -253,15 +254,16 @@ scrape_configs:
   - job_name: "temperatura-converter-jee"
     metrics_path: /metrics
     scrape_interval: 10s
+    fallback_scrape_protocol: "PrometheusText0.0.4"
+    static_configs:
+      - targets: ["jee:9990"]
+        labels: { service: "temperatura-converter-jee", app: "jee-wildfly32" }
+
+  - job_name: "temperatura-converter-jee-per-endpoint"
+    metrics_path: /temperatura/metrics-per-endpoint
+    scrape_interval: 5s
     static_configs:
       - targets: ["jee:8080"]
-        labels: { service: "temperatura-converter-jee", app: "jee-wildfly31" }
-
-  - job_name: "temperatura-converter-jee-health"
-    metrics_path: /health
-    scrape_interval: 15s
-    static_configs:
-      - targets: ["jee:9990", "jee:8080"]
         labels: { service: "temperatura-converter-jee" }
 
   - job_name: "otel-collector"
@@ -346,14 +348,14 @@ providers:
 
 | # | Tipo | Título | PromQL | O que mostra |
 |---|------|--------|--------|--------------|
-| 1 | timeseries | Requisições/s por endpoint | `sum by (uri) (rate(http_server_requests_seconds_count{app="temperatura-converter-jee"}[1m]))` | Throughput por `uri` |
-| 2 | timeseries | Latência p95 / p99 | `histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket[2m])))` | Cauda da latência |
-| 3 | timeseries | Taxa de erro (4xx/5xx) | `sum by (status) (rate(http_server_requests_seconds_count{status=~"4..\|5.."}[1m]))` | Erros/s por status |
+| 1 | timeseries | Requisições/s por endpoint | `rate(converter_requests_total{endpoint="ctof"}[1m])` + 5 outros + `sum(rate(converter_requests_total[1m]))` | Throughput por endpoint (ctof/ctok/ftoc/ftok/ktoc/ktof) |
+| 2 | timeseries | Latência p95 / p99 | `wildfly_undertow_max_request_time_seconds` / `rate(wildfly_undertow_processing_time_total_seconds[1m])` | Cauda total (WildFly sem histograma por uri) |
+| 3 | timeseries | Taxa de erro (4xx/5xx) | `sum(rate(wildfly_undertow_error_count_total[1m]))` | Erros/s total |
 | 4 | stat | Up | `up{job="temperatura-converter-jee"}` | 1 = OK, 0 = down |
-| 5 | stat | JVM Heap usado | `jvm_memory_used_bytes{area="heap"}` | Bytes heap |
-| 6 | timeseries | JVM GC pausas | `rate(jvm_gc_pause_seconds_sum[1m])` | Tempo GC/s |
-| 7a | timeseries | CPU | `system_cpu_usage` / `base_cpu_processCpuLoad` | 0..1 |
-| 7b | timeseries | Threads | `jvm_threads_live_threads` | contagem |
+| 5 | stat | JVM Heap usado | `base_memory_usedHeap_bytes` | Bytes heap |
+| 6 | timeseries | JVM GC pausas | `rate(base_gc_time_total_seconds[1m])` | Tempo GC/s |
+| 7a | timeseries | CPU | `base_cpu_processCpuLoad` | 0..1 |
+| 7b | timeseries | Threads | `base_thread_count` | contagem |
 
 Refresh `10s`, janela `now-15m → now`.
 

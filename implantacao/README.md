@@ -1,6 +1,6 @@
-# Implantação — Monitoramento (JEE / WildFly 31)
+# Implantação — Monitoramento (JEE / WildFly 32)
 
-Stack: **Jakarta EE 10 (WildFly 31) + JAX-RS + MicroProfile Metrics/Health/Telemetry + OpenTelemetry + Prometheus + Grafana + Nginx (TLS)** via Docker Compose. **Sem Spring Boot** — deploy `ROOT.war` no WildFly.
+Stack: **Jakarta EE 10 (WildFly 32) + JAX-RS + MicroProfile Metrics/Health/Telemetry/OpenAPI + OpenTelemetry + Prometheus + Grafana + Nginx (TLS)** via Docker Compose. **Sem Spring Boot** — deploy `ROOT.war` no WildFly (`standalone-microprofile.xml`).
 
 ## Arquitetura
 
@@ -161,14 +161,14 @@ docker build -t temperatura-converter-jee .
 docker run -p 8080:8080 -p 9990:9990 -e APP_USERNAME=admin -e APP_PASSWORD=admin123 temperatura-converter-jee
 ```
 
-Dockerfile (WildFly 31):
+Dockerfile (WildFly 32):
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .; RUN mvn dependency:go-offline -B
 COPY src ./src; RUN mvn package -DskipTests -B
-FROM quay.io/wildfly/wildfly:31.0.0.Final-jdk21
-COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/
+FROM quay.io/wildfly/wildfly:32.0.1.Final-jdk21
+COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/temperatura.war
 EXPOSE 8080 9990
 ```
 
@@ -183,7 +183,7 @@ docker compose down -v  # apaga volumes prometheus/grafana
 
 ```
 implantacao/
-├── docker-compose.yml              # jee:8080 (WildFly 31) + otel + prometheus + grafana + nginx
+├── docker-compose.yml              # jee:8080/9990 (WildFly 32) + otel + prometheus + grafana + nginx
 ├── Dockerfile (na raiz)            # multi-stage Maven → WildFly
 ├── nginx/
 │   ├── nginx.conf                  # jee.lab.dev → jee:8080
@@ -191,7 +191,7 @@ implantacao/
 │   └── README.md
 ├── scripts/add-hosts.sh            # 127.0.0.1 jee.lab.dev
 ├── otel-collector/otel-collector-config.yaml
-├── prometheus/prometheus.yml       # job jee:8080/metrics
+├── prometheus/prometheus.yml       # job jee:9990/metrics + per-endpoint 8080/temperatura/metrics-per-endpoint
 ├── grafana/...
 ├── docs/
 │   ├── README.md                   # guia monitoramento (MP Metrics/Health)

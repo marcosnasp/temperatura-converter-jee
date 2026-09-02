@@ -8,7 +8,7 @@
     <version>1.0.0</version>
     <packaging>war</packaging>
     <name>temperatura-converter-jee</name>
-    <description>Conversor Celsius/Fahrenheit/Kelvin - Jakarta EE 10 / WildFly 31</description>
+    <description>Conversor Celsius/Fahrenheit/Kelvin - Jakarta EE 10 / WildFly 32</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

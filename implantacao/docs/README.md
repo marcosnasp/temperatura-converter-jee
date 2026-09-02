@@ -1,6 +1,6 @@
-# Guia Completo de Monitoramento — temperatura-converter-jee (WildFly 31)
+# Guia Completo de Monitoramento — temperatura-converter-jee (WildFly 32)
 
-> Público-alvo: pessoa iniciante em monitoramento. Este documento explica **o que** está sendo monitorado, **por que** importa e **como** cada configuração funciona, linha a linha. Stack: **Jakarta EE 10 / WildFly 31 + MicroProfile Metrics/Health/Telemetry**.
+> Público-alvo: pessoa iniciante em monitoramento. Este documento explica **o que** está sendo monitorado, **por que** importa e **como** cada configuração funciona, linha a linha. Stack: **Jakarta EE 10 / WildFly 32 + MicroProfile Metrics/Health/Telemetry** (via `standalone-microprofile.xml`).
 
 ---
 
@@ -47,7 +47,7 @@ Este projeto implementa os 3, mesmo que traces/logs hoje vão para `debug` (cons
 ```
                           OTLP (4318 HTTP / 4317 gRPC)
    ┌─────────────────────┐  traces/metrics/logs   ┌──────────────────┐
-   │  JEE WildFly 31     │ ──────────────────────► │  OTel Collector  │
+   │  JEE WildFly 32     │ ──────────────────────► │  OTel Collector  │
    │  jee:8080           │                         │  :4317/:4318     │
    │  /temperatura       │                         │  :8889 /metrics  │
    │  /metrics (MP)      │                         │  :13133 health   │
@@ -88,8 +88,8 @@ Este projeto implementa os 3, mesmo que traces/logs hoje vão para `debug` (cons
 
 ## 3. Ferramentas usadas e papel de cada uma
 
-### WildFly 31 + Jakarta EE 10
-Servidor de aplicação. Roda `ROOT.war` (sem Spring Boot). Subsystems `microprofile-metrics-smallrye`, `microprofile-health-smallrye` e `microprofile-telemetry-smallrye` já habilitados no `standalone.xml`.
+### WildFly 32 + Jakarta EE 10
+Servidor de aplicação. Roda `ROOT.war` (sem Spring Boot). Subsystems `microprofile-metrics-smallrye`, `microprofile-health-smallrye`, `microprofile-telemetry-smallrye` e `microprofile-openapi-smallrye` já habilitados no `standalone-microprofile.xml`.
 
 ### MicroProfile Metrics
 Expõe `/metrics` no formato Prometheus (sem precisar `micrometer-registry-prometheus`). Labels automáticos incluem `mp.metrics.tags.app=temperatura-converter-jee`.
@@ -193,10 +193,9 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .; RUN mvn dependency:go-offline -B
 COPY src ./src; RUN mvn package -DskipTests -B
-FROM quay.io/wildfly/wildfly:31.0.0.Final-jdk21
-COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"] # cria usuário Elytron + standalone.sh
+FROM quay.io/wildfly/wildfly:32.0.1.Final-jdk21
+COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/temperatura.war
+ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"] # cria usuário + standalone.sh -c standalone-microprofile.xml
 ```
 
 Multi-stage: 1º compila, 2º só WildFly (~400MB). Roda como `jboss`.
@@ -278,7 +277,7 @@ scrape_configs:
     scrape_interval: 10s
     static_configs:
       - targets: ["jee:8080"]
-        labels: { service: "temperatura-converter-jee", app: "jee-wildfly31" }
+        labels: { service: "temperatura-converter-jee", app: "jee-wildfly32" }
 
   - job_name: "temperatura-converter-jee-health"
     metrics_path: /health
@@ -603,7 +602,7 @@ curl http://localhost:9090/api/v1/query?query=up
 
 ```
 implantacao/
-├── docker-compose.yml                          # jee:8080 (WildFly 31) + otel + prometheus + grafana + nginx
+├── docker-compose.yml                          # jee:8080/9990 (WildFly 32) + otel + prometheus + grafana + nginx
 ├── Dockerfile (na raiz)                        # multi-stage Maven → WildFly
 ├── nginx/nginx.conf                            # jee.lab.dev → jee:8080
 ├── nginx/certs/lab.dev.crt/.key                # cert autoassinado *.lab.dev

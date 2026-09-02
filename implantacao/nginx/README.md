@@ -13,11 +13,11 @@ nginx/
 └── README.md           # este arquivo
 ```
 
-## Domínios (JEE — WildFly 31)
+## Domínios (JEE — WildFly 32)
 
 | Domínio | Destino | Porta interna |
 |---------|---------|---------------|
-| https://jee.lab.dev | `jee:8080` | WildFly 31 — JAX-RS `/temperatura` (sem Spring Boot) |
+| https://jee.lab.dev | `jee:8080` | WildFly 32 — JAX-RS `/temperatura` (sem Spring Boot) |
 | https://grafana.lab.dev | `grafana:3000` | Grafana |
 | https://prometheus.lab.dev | `prometheus:9090` | Prometheus |
 | https://otel.lab.dev | `otel-collector:13133` | OTel Collector health/zpages |

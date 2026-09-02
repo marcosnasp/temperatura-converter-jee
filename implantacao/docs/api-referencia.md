@@ -1,7 +1,7 @@
 # API — Referência Completa
 
 > Base: `http://localhost:8080/temperatura` (direto) ou `https://jee.lab.dev/temperatura` (via Nginx TLS).
-> Stack: **Jakarta EE 10 / WildFly 31 + JAX-RS 3.1 + CDI 4.0**. Sem Spring Boot.
+> Stack: **Jakarta EE 10 / WildFly 32 + JAX-RS 3.1 + CDI 4.0**. Sem Spring Boot (standalone-microprofile.xml).
 > Arquivos: `src/main/java/com/example/temperatura/converter/controller/TemperaturaConverterController.java:11`, `interfaces/CalculadoraTemperatura.java:3`, `config/BasicAuthFilter.java:13`.
 
 ---

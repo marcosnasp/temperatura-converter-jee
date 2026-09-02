@@ -24,7 +24,7 @@
 ```
 [Browser]  cliente humano (curl, navegador)
 [Nginx]    nginx-lb:80/443  (TLS termination)
-[JEE]      temperatura-converter-jee:8080/9990  (WildFly 31)
+[JEE]      temperatura-converter-jee:8080/9990  (WildFly 32)
 [Collector|Otel]  otel-collector:4317/4318/8889/13133
 [Prom]     prometheus:9090
 [Graf]     grafana:3000  (via Nginx grafana.lab.dev:443)
@@ -45,7 +45,7 @@ PromQL = linguagem de consulta do Prometheus
 sequenceDiagram
     participant U as Browser/curl
     participant N as Nginx :443<br/>jee.lab.dev
-    participant J as JEE :8080<br/>WildFly
+    participant J as JEE :8080/9990<br/>WildFly 32
     participant C as Calculadora<br/>CalculadoraTemperaturaImpl
 
     U->>N: GET /temperatura/converter/ctof/25<br/>Host: jee.lab.dev<br/>Authorization: Basic admin:admin123<br/>TLS 1.3 (cert *.lab.dev)

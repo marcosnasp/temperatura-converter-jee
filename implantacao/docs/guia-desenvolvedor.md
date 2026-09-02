@@ -1,6 +1,6 @@
-# Guia do Desenvolvedor — temperatura-converter-jee (WildFly 31)
+# Guia do Desenvolvedor — temperatura-converter-jee (WildFly 32)
 
-> Para quem vai **codar, testar e evoluir** a aplicação. Explica cada componente, requisito e fluxo, do `git clone` ao `docker compose up`. Stack: **Jakarta EE 10 / WildFly 31 + JAX-RS + CDI + MicroProfile**.
+> Para quem vai **codar, testar e evoluir** a aplicação. Explica cada componente, requisito e fluxo, do `git clone` ao `docker compose up`. Stack: **Jakarta EE 10 / WildFly 32 + JAX-RS + CDI + MicroProfile**.
 
 ---
 
@@ -37,7 +37,7 @@ GET /temperatura/converter/ktoc/273.15  → 0.0
 
 Autenticado com **HTTP Basic** (`admin/admin123` por padrão, via `BasicAuthFilter` + `APP_USERNAME/PASSWORD`). Métricas ` /metrics` e health `/health` (MicroProfile) visualizados em **Prometheus + Grafana** atrás de **Nginx HTTPS** (`https://jee.lab.dev`).
 
-Sem Spring Boot — deploy `ROOT.war` no WildFly 31.
+Sem Spring Boot — deploy `ROOT.war` no WildFly 32.
 
 ---
 
@@ -72,7 +72,7 @@ Sem Spring Boot — deploy `ROOT.war` no WildFly 31.
 | Camada | Tecnologia | Versão | Onde está |
 |--------|------------|--------|-----------|
 | Linguagem | Java | 21 | `pom.xml:15` |
-| Runtime | WildFly | 31.0.0.Final-jdk21 | `Dockerfile:8` `quay.io/wildfly/wildfly:31.0.0.Final-jdk21` |
+| Runtime | WildFly | 32.0.1.Final-jdk21 | `Dockerfile:8` `quay.io/wildfly/wildfly:32.0.1.Final-jdk21` |
 | API | Jakarta EE | 10.0.0 | `pom.xml:17` `jakarta.jakartaee-api` (provided) |
 | Web | JAX-RS 3.1 + CDI 4.0 | — | `RestApplication.java`, `controller/*`, `beans.xml` |
 | Segurança | JAX-RS `ContainerRequestFilter` + Elytron `add-user.sh` | — | `config/BasicAuthFilter.java:13`, `scripts/add-user.sh` |
@@ -81,7 +81,7 @@ Sem Spring Boot — deploy `ROOT.war` no WildFly 31.
 | Build | Maven War plugin 3.4.0 | — | `pom.xml:53` `packaging war` `finalName ROOT` |
 | Infra local | OTel Collector Contrib 0.128, Prometheus 3.3.1, Grafana 12.2, Nginx 1.27-alpine | — | `implantacao/docker-compose.yml` |
 
-> **Por que WildFly 31 + Java 21?** WildFly 31 já traz MP Metrics/Health/Telemetry habilitados. Java 21 é LTS e base da imagem `quay.io/wildfly`.
+> **Por que WildFly 32 + Java 21?** WildFly 32 já traz MP Metrics/Health/Telemetry habilitados (via `standalone-microprofile.xml`). Java 21 é LTS e base da imagem `quay.io/wildfly`.
 
 ---
 
@@ -236,10 +236,10 @@ Apenas `jakarta.jakartaee-api:10.0.0` `provided` + `junit-jupiter`. Sem Spring.
 FROM maven:3.9-eclipse-temurin-21 AS build
 COPY pom.xml .; RUN mvn dependency:go-offline -B
 COPY src ./src; RUN mvn package -DskipTests -B
-FROM quay.io/wildfly/wildfly:31.0.0.Final-jdk21
-COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/
+FROM quay.io/wildfly/wildfly:32.0.1.Final-jdk21
+COPY --from=build /app/target/ROOT.war /opt/jboss/wildfly/standalone/deployments/temperatura.war
 COPY scripts/add-user.sh /opt/jboss/wildfly/scripts/add-user.sh
-ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"] # cria usuário + standalone.sh -b 0.0.0.0
+ENTRYPOINT ["/opt/jboss/wildfly/scripts/add-user.sh"] # cria usuário + standalone.sh -c standalone-microprofile.xml -b 0.0.0.0
 ```
 
 ---
@@ -336,7 +336,7 @@ curl http://localhost:8080/metrics | head -20
 curl http://localhost:8080/metrics | grep http_server
 ```
 
-> Rodar `mvn` puro sem WildFly só compila/testa — não sobe servidor. Para dev local sem Docker, instale WildFly 31 e deploye `target/ROOT.war` em `standalone/deployments/`.
+> Rodar `mvn` puro sem WildFly só compila/testa — não sobe servidor. Para dev local sem Docker, instale WildFly 32 e deploye `target/ROOT.war` em `standalone/deployments/`.
 
 ---
 
@@ -501,7 +501,7 @@ Exemplo: `GET /converter/ctof-round/{c}` que devolve inteiro arredondado.
 | `java: error: release version 21 not supported` | JDK 17/8 ativo | `java -version` → instale Temurin 21, `export JAVA_HOME=/usr/lib/jvm/temurin-21` |
 | `Port 8080 already in use` | app já rodando | `lsof -i :8080` → `kill` ou `docker compose down` |
 | `401 Unauthorized` | sem Basic Auth | `curl -u admin:admin123` ou check `APP_USERNAME` |
-| `curl /metrics → 404` | WildFly sem MP Metrics subsystem | Recriar imagem `docker build` — WildFly 31 já tem |
+| `curl /metrics → 404` | WildFly sem MP Metrics subsystem | Recriar imagem `docker build` — WildFly 32 (`standalone-microprofile.xml`) já tem |
 | `host not found in upstream` | nginx subiu antes | `docker compose restart nginx` |
 | `ERR_CERT_AUTHORITY_INVALID` | cert autoassinado | `curl -k` ou `--cacert nginx/certs/lab.dev.crt` |
 | `jee.lab.dev: Name not resolved` | /etc/hosts | `cat /etc/hosts \| grep lab.dev` → rode `./scripts/add-hosts.sh` |

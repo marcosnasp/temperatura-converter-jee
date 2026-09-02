@@ -14,7 +14,7 @@ scrape_configs:
       - targets: ["jee:9990"]
         labels:
           service: "temperatura-converter-jee"
-          app: "jee-wildfly31"
+          app: "jee-wildfly32"
 
   - job_name: "temperatura-converter-jee-per-endpoint"
     metrics_path: /temperatura/metrics-per-endpoint
