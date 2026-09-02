@@ -18,7 +18,7 @@ public class BasicAuthFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext ctx) throws IOException {
         String path = ctx.getUriInfo().getPath();
         // libera health/metrics sem auth (Prometheus + compose healthcheck)
-        if (path.equals("health") || path.startsWith("health/") || path.equals("metrics") || path.startsWith("metrics/")) {
+        if (path.equals("health") || path.startsWith("health/") || path.equals("metrics") || path.startsWith("metrics/") || path.equals("metrics-per-endpoint") || path.equals("openapi") || path.equals("openapi-ui") || path.equals("openapi.yaml")) {
             return;
         }
         // ponytail: autentica apenas /converter, resto passa (404 do JAX-RS depois)

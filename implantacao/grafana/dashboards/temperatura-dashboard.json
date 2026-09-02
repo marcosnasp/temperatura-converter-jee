@@ -14,8 +14,32 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "sum(rate(wildfly_undertow_request_count_total{job=\"temperatura-converter-jee\"}[1m]))",
-          "legendFormat": "req/s"
+          "expr": "rate(converter_requests_total{endpoint=\"ctof\"}[1m])",
+          "legendFormat": "ctof"
+        },
+        {
+          "expr": "rate(converter_requests_total{endpoint=\"ctok\"}[1m])",
+          "legendFormat": "ctok"
+        },
+        {
+          "expr": "rate(converter_requests_total{endpoint=\"ftoc\"}[1m])",
+          "legendFormat": "ftoc"
+        },
+        {
+          "expr": "rate(converter_requests_total{endpoint=\"ftok\"}[1m])",
+          "legendFormat": "ftok"
+        },
+        {
+          "expr": "rate(converter_requests_total{endpoint=\"ktoc\"}[1m])",
+          "legendFormat": "ktoc"
+        },
+        {
+          "expr": "rate(converter_requests_total{endpoint=\"ktof\"}[1m])",
+          "legendFormat": "ktof"
+        },
+        {
+          "expr": "sum(rate(converter_requests_total[1m]))",
+          "legendFormat": "total"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }

@@ -16,6 +16,14 @@ scrape_configs:
           service: "temperatura-converter-jee"
           app: "jee-wildfly31"
 
+  - job_name: "temperatura-converter-jee-per-endpoint"
+    metrics_path: /temperatura/metrics-per-endpoint
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["jee:8080"]
+        labels:
+          service: "temperatura-converter-jee"
+
   - job_name: "otel-collector"
     metrics_path: /metrics
     scrape_interval: 10s
