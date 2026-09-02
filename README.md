@@ -154,6 +154,14 @@ Spec via MicroProfile OpenAPI 3.1.1 em `GET /openapi` (yaml) e UI em `GET /tempe
 - UI: `https://jee.lab.dev/temperatura/openapi-ui` → Try it out (Basic admin/admin123)
 - Docs isolado: `implantacao/docs/openapi-swagger.md` | Geral: `implantacao/docs/README.md:18`
 
+## Métricas por Endpoint
+
+`wildfly_undertow_request_count_total` não tem `uri` → criamos `converter_requests_total{endpoint="ctof"}` (6 contadores em memória + `/temperatura/metrics-per-endpoint` Prometheus).
+
+- `curl http://localhost:8080/temperatura/metrics-per-endpoint`
+- Grafana `Requisições/s por endpoint` → 7 séries (ctof/ctok/ftoc/ftok/ktoc/ktof + total)
+- Docs isolado: `implantacao/docs/metricas-por-endpoint.md` | Geral: `implantacao/docs/README.md:19`
+
 > Acesso direto `/openapi` baixa `yaml` (Content-Type application/yaml) — correto, use Swagger UI para ver bonito.
 
 ## Troubleshooting

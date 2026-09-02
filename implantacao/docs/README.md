@@ -652,4 +652,14 @@ Acesso rápido: `https://jee.lab.dev/temperatura/openapi-ui` (Swagger) e `https:
 
 ---
 
+## 19. Métricas por Endpoint — `converter_requests_total`
+
+WildFly `wildfly_undertow_request_count_total` não tem `uri`. Como criamos `converter_requests_total{endpoint="ctof"}` sem lib externa e fizemos Grafana mostrar 7 séries:
+
+**→ [`docs/metricas-por-endpoint.md`](./metricas-por-endpoint.md)** — estudo isolado (contador `EndpointMetrics`, `MetricsResource /temperatura/metrics-per-endpoint`, Prometheus 5s, Grafana 7 queries).
+
+Acesso rápido: `curl http://localhost:8080/temperatura/metrics-per-endpoint` e `https://grafana.lab.dev/d/temperatura-converter` → Requisições/s por endpoint.
+
+---
+
 *Dúvidas? Comece pelo Prometheus UI (`http://localhost:9090/graph` ou `https://prometheus.lab.dev/graph`) digitando `up` e vendo o valor ao vivo.*
