@@ -146,6 +146,16 @@ Ver `k6/README.md`. Métricas `wildfly_undertow_request_count_total` só sobem a
 
 ---
 
+## OpenAPI + Swagger UI
+
+Spec via MicroProfile OpenAPI 3.1.1 em `GET /openapi` (yaml) e UI em `GET /temperatura/openapi-ui` (Swagger). Habilitação: `pom.xml` + `standalone-microprofile.xml` + `@OpenAPIDefinition` + `SwaggerUIResource`.
+
+- Spec: `curl -k https://jee.lab.dev/openapi | head`
+- UI: `https://jee.lab.dev/temperatura/openapi-ui` → Try it out (Basic admin/admin123)
+- Docs isolado: `implantacao/docs/openapi-swagger.md` | Geral: `implantacao/docs/README.md:18`
+
+> Acesso direto `/openapi` baixa `yaml` (Content-Type application/yaml) — correto, use Swagger UI para ver bonito.
+
 ## Troubleshooting
 
 Tudo catalogado em `implantacao/troubleshoot/README.md` e `implantacao/troubleshoot/04-ajustes-set-2026.md` (casos 4-6: Grafana No data, WildFly stats 0, Nginx 404) + `implantacao/docs/troubleshoot/` (01 WildFly image, 02 TLS unrecognized_name, 03 contexto 404).

@@ -642,4 +642,14 @@ Toda a camada de balanceador, domínios `*.lab.dev`, certificado e `/etc/hosts` 
 
 ---
 
+## 18. OpenAPI + Swagger UI — documentação viva
+
+API documentada via **MicroProfile OpenAPI 3.1.1** (`/openapi`). Como habilitamos, por que o navegador baixa `yaml` e como o Swagger UI consome:
+
+**→ [`docs/openapi-swagger.md`](./openapi-swagger.md)** — estudo isolado (dependência `pom.xml`, `standalone-microprofile.xml`, `@OpenAPIDefinition`, `SwaggerUIResource`).
+
+Acesso rápido: `https://jee.lab.dev/temperatura/openapi-ui` (Swagger) e `https://jee.lab.dev/openapi` (spec yaml). Ver também `README.md: API`.
+
+---
+
 *Dúvidas? Comece pelo Prometheus UI (`http://localhost:9090/graph` ou `https://prometheus.lab.dev/graph`) digitando `up` e vendo o valor ao vivo.*

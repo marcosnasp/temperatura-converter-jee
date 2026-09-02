@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Swagger UI - temperatura-converter-jee</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <style>body{margin:0} #swagger-ui{padding:20px}</style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+<script>
+  window.onload = () => {
+    window.ui = SwaggerUIBundle({
+      url: "/openapi", // ponytail: WildFly MP OpenAPI expõe em /openapi (fora de /temperatura)
+      dom_id: '#swagger-ui',
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+      layout: "StandaloneLayout",
+      deepLinking: true,
+      // ponytail: Basic Auth para /converter - Swagger UI pedirá ao tentar "Try it out"
+      requestInterceptor: (req) => {
+        // não envia auth no load do spec (sem auth), só nas requisições Try it out
+        return req;
+      }
+    });
+  };
+</script>
+</body>
+</html>
