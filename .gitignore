@@ -1,0 +1,14 @@
+target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+*.log
+*.class
+.DS_Store
+.env
+implantacao/.env
+implantacao/prometheus-data/
+implantacao/grafana-data/
+k6/results/

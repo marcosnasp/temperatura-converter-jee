@@ -1,0 +1,107 @@
+{
+  "title": "Temperatura Converter Service",
+  "uid": "temperatura-converter",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Requisições/s por endpoint",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(wildfly_undertow_request_count_total{job=\"temperatura-converter-jee\"}[1m]))",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latência p95 / p99",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "wildfly_undertow_max_request_time_seconds{job=\"temperatura-converter-jee\"}",
+          "legendFormat": "max time"
+        },
+        {
+          "expr": "rate(wildfly_undertow_processing_time_total_seconds{job=\"temperatura-converter-jee\"}[1m])",
+          "legendFormat": "processing time/s"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Taxa de erro (4xx/5xx)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(wildfly_undertow_error_count_total{job=\"temperatura-converter-jee\"}[1m]))",
+          "legendFormat": "errors/s"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "stat",
+      "title": "Up",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "up{job=\"temperatura-converter-jee\"}",
+          "legendFormat": "up"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "JVM Heap usado",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "targets": [
+        {
+          "expr": "base_memory_usedHeap_bytes{job=\"temperatura-converter-jee\"}",
+          "legendFormat": "heap"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM GC pausas",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(base_gc_time_total_seconds{job=\"temperatura-converter-jee\"}[1m])",
+          "legendFormat": "{{name}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU / Threads",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "base_cpu_processCpuLoad{job=\"temperatura-converter-jee\"}",
+          "legendFormat": "cpu usage"
+        },
+        {
+          "expr": "base_thread_count{job=\"temperatura-converter-jee\"}",
+          "legendFormat": "threads"
+        }
+      ]
+    }
+  ]
+}
