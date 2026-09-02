@@ -1,0 +1,118 @@
+services:
+  jee:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: temperatura-converter-jee
+    container_name: temperatura-converter-jee
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+    environment:
+      APP_USERNAME: ${APP_USERNAME:-admin}
+      APP_PASSWORD: ${APP_PASSWORD:-admin123}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: temperatura-converter-jee
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      JAVA_OPTS: "-Djboss.bind.address=0.0.0.0 -Djboss.bind.address.management=0.0.0.0 -Dwildfly.statistics-enabled=true"
+    depends_on:
+      - otel-collector
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/temperatura/health || wget -qO- http://localhost:9990/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus metrics (collector self)
+      - "13133:13133" # health_check
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.3.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - jee
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_DOMAIN: grafana.lab.dev
+      GF_SERVER_ROOT_URL: https://grafana.lab.dev/
+      # ponytail: keep Grafana on http internally, TLS terminates at nginx
+      GF_SERVER_PROTOCOL: http
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx-lb
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs/lab.dev.crt:/etc/nginx/certs/lab.dev.crt:ro
+      - ./nginx/certs/lab.dev.key:/etc/nginx/certs/lab.dev.key:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - jee
+      - grafana
+      - prometheus
+      - otel-collector
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-check-certificate -qO- https://127.0.0.1:443/nginx-health --header='Host: jee.lab.dev' | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
